@@ -19,8 +19,7 @@ param(
   [Parameter(ParameterSetName="Update")]
   [string] $Subdomain = '',
   [Parameter(ParameterSetName="Update")]
-  [Parameter(ParameterSetName="Renew")]
-  [switch] $SkipIpUpdate,
+  [switch] $Update,
   [Parameter(ParameterSetName="Update")]
   [Parameter(ParameterSetName="Renew")]
   [switch] $Renew,
@@ -101,7 +100,7 @@ try {
                 $lastRecord = $idx
               }
             }
-            if (!$SkipIpUpdate) {
+            if ($Update) {
               if ($Ip -eq 'auto') {
                 # Retrieve IP from on of the services
                 Write-Verbose "Retrieving my IP address from http://checkip.amazonaws.com"
@@ -225,11 +224,13 @@ catch {
 .PARAMETER Ip
     Specifies IP address to use. If set to 'auto', IP address will be retrieved from one of the web IP retrieval services.
 .PARAMETER Subdomain
-    Specifies subdomain of the main domain to update. If not set the main domain is updated.
+    Specifies subdomain of the main domain to update. If not set the main domain is updated. Can be used in combination with -Update.
 .PARAMETER Renew
-    If this switch is provided, domains will be renewed if possible.
-.PARAMETER SkipIpUpdate
-    If this switch is provided, the domain records will not be updated. Can be used in combination with -Renew.
+    If this switch is provided, domains will be renewed if possible. Can be used in combination with -Update.
+.PARAMETER Update
+    If this switch is provided, the domain records will be updated. Can be used in combination with -Renew.
+.PARAMETER Help
+    Displays full help.
 .INPUTS
     none
 .OUTPUTS

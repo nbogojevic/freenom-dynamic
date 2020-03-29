@@ -10,13 +10,13 @@ For use on machines that do not have PowerShell, the script is packaged in a doc
 To use it on such machines:
 
 ```sh
-docker run -ti --rm nbogojevic/freenom
+docker run -ti --rm nbogojevic/freenom-dynamic
 ```
 
 ## Docker Container Building
 
 ```sh
-docker build . --tag nbogojevic/freenom
+docker build . --tag nbogojevic/freenom-dynamic
 ```
 
 ## Script Usage

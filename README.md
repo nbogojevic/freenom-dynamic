@@ -2,12 +2,16 @@
 
 This repository contains script to update Freenom.com records.
 
-Script is written in PowerShell 7 and can be run on any OS supporting it.
+Script is written in PowerShell 7 and can be run on any [OS supporting it](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7). For help, run:
 
-For use on machines that do not have PowerShell, the script is packaged in a docker container 
-`nbogojevic/freenom`
+```powershell
+pwsh freenom.ps1 -Help
+```
 
-To use it on such machines:
+For use on machines that do not have PowerShell, the script is packaged in a [docker container 
+`nbogojevic/freenom-dynamic`](https://hub.docker.com/repository/docker/nbogojevic/freenom-dynamic).
+
+To use it from docker run for more information:
 
 ```sh
 docker run -ti --rm nbogojevic/freenom-dynamic
@@ -58,28 +62,42 @@ docker build . --tag nbogojevic/freenom-dynamic
       badresolv - Failed to connect to  because failed to resolve provider address.
       badconn - Failed to connect to provider because connection timeout.
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd all 192.0.2.1
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd all 192.0.2.1
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd all 192.0.2.1
 
     Updates A records of all registered domains records to point to 192.0.2.0.
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd my.example.com auto
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto
 
     Updates A record of my.example.com domain to point to automatically detected address.
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
 
     Renews my.example.com domain and doesn't update DNS records
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd all 198.51.100.2 -Renew
+    ./freenom.ps1 user@example.com p455w0rd all 198.51.100.2 -Renew
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd all 198.51.100.2 -Renew
 
     Renews all registered domains that are about to expire and updates their DNS record to 198.51.100.2.
 
 .NOTES
     Author: Nenad Bogojevic
     Year:   2020
+
+.LINK
+    https://github.com/nbogojevic/freenom-dynamic
 #>
 ```
+
+## Copyright and Trademark Notice
+
+This software is licensed under MIT License.
+
+Freenom and all other trademarks, logos and copyrights are the property of their respective owners. 
+
 

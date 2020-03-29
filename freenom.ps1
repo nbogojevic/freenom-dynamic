@@ -1,4 +1,4 @@
-#! #!/usr/bin/env pwsh
+#! /usr/bin/env pwsh
 #
 param(
   [Parameter(Mandatory = $true, Position = 0, ParameterSetName="Update")]
@@ -29,7 +29,7 @@ param(
 )
 
 if ($Help) {
-  Get-Help $($MYINVOCATION.InvocationName)
+  Get-Help $($MYINVOCATION.InvocationName) -Full
   Exit 0
 }
 
@@ -245,26 +245,36 @@ catch {
       badresolv - Failed to connect to  because failed to resolve provider address.
       badconn - Failed to connect to provider because connection timeout.
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd all 192.0.2.1
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd all 192.0.2.1
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd all 192.0.2.1
 
     Updates A records of all registered domains records to point to 192.0.2.0.
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd my.example.com auto
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto
 
     Updates A record of my.example.com domain to point to automatically detected address.
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
+    ./freenom.ps1 nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd my.example.com auto -Renew -SkipIpUpdate
 
     Renews my.example.com domain and doesn't update DNS records
 
 .EXAMPLE
-    freenom.ps1 user@example.com p455w0rd all 198.51.100.2 -Renew
+    ./freenom.ps1 user@example.com p455w0rd all 198.51.100.2 -Renew
+    $ docker run -ti --rm nbogojevic/freenom-dynamic user@example.com p455w0rd all 198.51.100.2 -Renew
 
     Renews all registered domains that are about to expire and updates their DNS record to 198.51.100.2.
 
 .NOTES
     Author: Nenad Bogojevic
     Year:   2020
+
+    Not affiliated with Freenom.
+    Freenom and all other trademarks, logos and copyrights are the property of their respective owners. 
+
+.LINK
+    https://github.com/nbogojevic/freenom-dynamic
 #>

@@ -6,11 +6,11 @@ param(
   [ValidateNotNullOrEmpty()]
   [string] $Email,
   [Parameter(Mandatory = $true, Position = 1, ParameterSetName="Update")]
-  [Parameter(Mandatory = $true, Position = 0, ParameterSetName="Renew")]
+  [Parameter(Mandatory = $true, Position = 1, ParameterSetName="Renew")]
   [ValidateNotNullOrEmpty()]
   [string] $Passwd,
   [Parameter(Mandatory = $true, Position = 2, ParameterSetName="Update")]
-  [Parameter(Mandatory = $true, Position = 0, ParameterSetName="Renew")]
+  [Parameter(Mandatory = $true, Position = 2, ParameterSetName="Renew")]
   [ValidateNotNullOrEmpty()]
   [string] $Domain,
   [Parameter(Mandatory = $true, Position = 3, ParameterSetName="Update")]
@@ -51,6 +51,13 @@ $progressPreference = 'silentlyContinue'
 $script:status = 'good'
 
 try {
+  Write-Debug "Options"
+  Write-Debug "E-mail $Email"
+  Write-Debug "Domain $Domain"
+  Write-Debug "Domain $Ip"
+  Write-Debug "Subdomain $Subomain"
+  Write-Debug "Update $Update"
+  Write-Debug "Renew $Renew"
   Write-Verbose "UserAgent: $UserAgent"
   Write-Verbose 'Connecting...'
   $connect = Invoke-WebRequest -Uri 'https://my.freenom.com/clientarea.php' -SessionVariable websession -UserAgent $UserAgent
@@ -100,6 +107,7 @@ try {
                 $lastRecord = $idx
               }
             }
+            Write-Debug "Total number of records: $($lastRecord+1)"
             if ($Update) {
               if ($Ip -eq 'auto') {
                 # Retrieve IP from on of the services
@@ -115,6 +123,7 @@ try {
                 if (($records["records[$i][name]"] -eq $Subdomain) -and
                     ($records["records[$i][type]"] -eq 'A')) {
                   $foundRecord = $true
+                  Write-Debug "Found record at $i: $($records["records[$i][name]"]) $($records["records[$i][type]"]) $($records["records[$i][ttl]"]) $($records["records[$i][value]"])"
                   if ($records["records[$i][value]"] -ne $Ip) {
                     Write-Verbose "Updating record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : ''))"
                     $form = @{
@@ -192,12 +201,12 @@ try {
       $script:status
     }
     catch {
-      Write-Verbose $_.Exception
+      $_.Exception.WasThrownFromThrowStatement || Write-Verbose $_.Exception
       throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'badagent'
     }
   }
   catch {
-    Write-Verbose $_.Exception
+    $_.Exception.WasThrownFromThrowStatement || Write-Verbose $_.Exception
     throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'noauth'
   }
   finally {

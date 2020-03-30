@@ -1,6 +1,6 @@
 # Dynamic DNS for Freenom.com
 
-This repository contains script to update Freenom.com records.
+This repository contains script to update [Freenom](https://www.freenom.com) records.
 
 Script is written in PowerShell 7 and can be run on any [OS supporting it](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7). For help, run:
 
@@ -11,7 +11,7 @@ pwsh freenom.ps1 -Help
 For use on machines that do not have PowerShell, the script is packaged in a [docker container 
 `nbogojevic/freenom-dynamic`](https://hub.docker.com/repository/docker/nbogojevic/freenom-dynamic).
 
-To use it from docker run for more information:
+To use it from docker run following for more information:
 
 ```sh
 docker run -ti --rm nbogojevic/freenom-dynamic
@@ -42,11 +42,13 @@ docker build . --tag nbogojevic/freenom-dynamic
 .PARAMETER Ip
     Specifies IP address to use. If set to 'auto', IP address will be retrieved from one of the web IP retrieval services.
 .PARAMETER Subdomain
-    Specifies subdomain of the main domain to update. If not set the main domain is updated.
+    Specifies subdomain of the main domain to update. If not set the main domain is updated. Can be used in combination with -Update.
 .PARAMETER Renew
-    If this switch is provided, domains will be renewed if possible.
-.PARAMETER SkipIpUpdate
-    If this switch is provided, the domain records will not be updated. Can be used in combination with -Renew.
+    If this switch is provided, domains will be renewed if possible. Can be used in combination with -Update.
+.PARAMETER Update
+    If this switch is provided, the domain records will be updated. Can be used in combination with -Renew.
+.PARAMETER Help
+    Displays full help.
 .INPUTS
     none
 .OUTPUTS
@@ -88,6 +90,9 @@ docker build . --tag nbogojevic/freenom-dynamic
 .NOTES
     Author: Nenad Bogojevic
     Year:   2020
+
+    Not affiliated with Freenom.
+    Freenom and all other trademarks, logos and copyrights are the property of their respective owners. 
 
 .LINK
     https://github.com/nbogojevic/freenom-dynamic

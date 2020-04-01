@@ -1,28 +1,40 @@
 #! /usr/bin/env pwsh
 #
 param(
-  [Parameter(Mandatory = $true, Position = 0, ParameterSetName="Update")]
-  [Parameter(Mandatory = $true, Position = 0, ParameterSetName="Renew")]
+  [Parameter(Mandatory = $true, Position = 0, ParameterSetName='Update')]
+  [Parameter(Mandatory = $true, Position = 0, ParameterSetName='Renew')]
   [ValidateNotNullOrEmpty()]
   [string] $Email,
-  [Parameter(Mandatory = $true, Position = 1, ParameterSetName="Update")]
-  [Parameter(Mandatory = $true, Position = 1, ParameterSetName="Renew")]
+  
+  [Parameter(Mandatory = $true, Position = 1, ParameterSetName='Update')]
+  [Parameter(Mandatory = $true, Position = 1, ParameterSetName='Renew')]
   [ValidateNotNullOrEmpty()]
   [string] $Passwd,
-  [Parameter(Mandatory = $true, Position = 2, ParameterSetName="Update")]
-  [Parameter(Mandatory = $true, Position = 2, ParameterSetName="Renew")]
+  
+  [Parameter(Mandatory = $true, Position = 2, ParameterSetName='Update')]
+  [Parameter(Mandatory = $true, Position = 2, ParameterSetName='Renew')]
   [ValidateNotNullOrEmpty()]
   [string] $Domain,
-  [Parameter(Mandatory = $true, Position = 3, ParameterSetName="Update")]
+  
+  [Parameter(Mandatory = $true, Position = 3, ParameterSetName='Update')]
   [ValidateNotNullOrEmpty()]
   [string] $Ip,
-  [Parameter(ParameterSetName="Update")]
+  
+  [Parameter(ParameterSetName='Update')]
   [string] $Subdomain = '',
-  [Parameter(ParameterSetName="Update")]
+  
+  [Parameter(ParameterSetName='Update')]
   [switch] $Update,
-  [Parameter(ParameterSetName="Update")]
-  [Parameter(ParameterSetName="Renew")]
+  
+  [Parameter(ParameterSetName='Update')]
+  [Parameter(ParameterSetName='Renew')]
   [switch] $Renew,
+  
+  [Parameter(ParameterSetName='Update')]
+  [Parameter(ParameterSetName='Renew')]
+  [Alias('Log')]
+  [System.IO.FileInfo] $Logfile,
+  
   [Parameter(ParameterSetName="Help")]
   [switch] $Help
 )
@@ -32,190 +44,219 @@ if ($Help) {
   Exit 0
 }
 
-$userAgents = @(
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.108 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2486.0 Safari/537.36 Edge/13.10586',
-  'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-  'Mozilla/5.0 (IE 11.0; Windows NT 6.3; Trident/7.0; .NET4.0E; .NET4.0C; rv:11.0) like Gecko',
-  'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1',
-  'Mozilla/5.0 (Android 9.0; Mobile; rv:61.0) Gecko/61.0 Firefox/61.0'
-)
-
-$UserAgent = $userAgents[(Get-Random -Maximum $userAgents.Count)]
-$progressPreference = 'silentlyContinue'
-$script:status = 'good'
-
 try {
-  Write-Debug "Options"
-  Write-Debug "E-mail $Email"
-  Write-Debug "Domain $Domain"
-  Write-Debug "Domain $Ip"
-  Write-Debug "Subdomain $Subomain"
-  Write-Debug "Update $Update"
-  Write-Debug "Renew $Renew"
-  Write-Verbose "UserAgent: $UserAgent"
-  Write-Verbose 'Connecting...'
-  $connect = Invoke-WebRequest -Uri 'https://my.freenom.com/clientarea.php' -SessionVariable websession -UserAgent $UserAgent
-  $token = ($connect.InputFields | Where-Object name -eq 'token' | Select-Object -First 1 Value).Value
-  Write-Verbose "token=$token"
-  
-  $webArgs = @{
-    Headers           = @{ Referer = 'https://my.freenom.com/clientarea.php' }
-    WebSession        = $websession
-    UserAgent         = $UserAgent
-    MaximumRetryCount = 5
-    RetryIntervalSec  = 2
-  }
-  try {
-    $form = @{
-      username = $Email
-      password = $Passwd
-      token    = $token
+  if ($Logfile) {
+    $OldLogfile = "$($Logfile).old"
+    
+    # Removing the .log.old file    
+    If (Test-Path -Path $OldLogfile) { 
+      $_ = Remove-Item -Path $OldLogfile
     }
-    Write-Verbose 'Authenticating...'
-    $auth = Invoke-WebRequest -Uri 'https://my.freenom.com/dologin.php' -Method Post -Form $form @webArgs
-    if ($auth.Content.Contains('Login Details Incorrect') -or
-        ($auth.Headers['Location'] -and $auth.Headers['Location'].Contains('clientarea.php?incorrect=true'))) {
-      throw 'noauth'
+    
+    # Renaming the .log to .log.old  
+    If (Test-Path -Path $Logfile) {
+      $_ = Rename-Item -Path $Logfile -NewName $OldLogfile
+    }
+    $_ = Start-Transcript -Path $Logfile -Force -IncludeInvocationHeader
+  }
+
+  $userAgents = @(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.108 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2486.0 Safari/537.36 Edge/13.10586',
+    'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+    'Mozilla/5.0 (IE 11.0; Windows NT 6.3; Trident/7.0; .NET4.0E; .NET4.0C; rv:11.0) like Gecko',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (Android 9.0; Mobile; rv:61.0) Gecko/61.0 Firefox/61.0'
+  )
+
+  $UserAgent = $userAgents[(Get-Random -Maximum $userAgents.Count)]
+  $progressPreference = 'silentlyContinue'
+  $script:status = 'good'
+
+  try {
+    Write-Debug 'Options'
+    Write-Debug "E-mail    $Email"
+    Write-Debug "Domain    $Domain"
+    Write-Debug "Domain    $Ip"
+    Write-Debug "Subdomain $Subomain"
+    Write-Debug "Update    $Update"
+    Write-Debug "Renew     $Renew"
+    Write-Verbose "UserAgent: $UserAgent"
+    Write-Verbose 'Connecting...'
+    try {
+      $connect = Invoke-WebRequest -MaximumRetryCount 5 -RetryIntervalSec 2 -Uri 'https://my.freenom.com/clientarea.php' -SessionVariable websession -UserAgent $UserAgent
+      $script:token = ($connect.InputFields | Where-Object name -eq 'token' | Select-Object -First 1 Value).Value
+    }
+    catch {
+      Write-Verbose $_.Exception
+      'badconn'
+      Exit 1
+    }
+    Write-Verbose "token=$script:token"
+    
+    $webArgs = @{
+      Headers           = @{ Referer = 'https://my.freenom.com/clientarea.php' }
+      WebSession        = $websession
+      UserAgent         = $UserAgent
+      MaximumRetryCount = 5
+      RetryIntervalSec  = 2
     }
     try {
-      Write-Verbose 'Retrieving domains...'
-      $script:foundDomain = $false
-      $allDomains = Invoke-WebRequest -Uri "https://my.freenom.com/clientarea.php?action=domains&itemlimit=all" @webArgs
-      $allDomains.Links | Where-Object href -match 'action=domaindetails' | ForEach-Object {
-        Write-Verbose "Retrieving domain data $($_.href)..."
-        $aDomain = Invoke-WebRequest -Uri "https://my.freenom.com/$($_.href)" @webArgs
-        $aDomain.Links | Where-Object href -match '\/clientarea.php\?managedns=([a-z\-\.]+)\&domainid=([0-9]+)' | ForEach-Object {
-          $currentDomain = $matches[1]
-          $domainId = $matches[2]
-          Write-Verbose "Domain: $currentDomain Id: $domainId"
-          if (($Domain -eq 'all') -or ($Domain -eq $currentDomain)) {
-            $script:foundDomain = $true
-            Write-Verbose "Checking domain $currentDomain..."
-            $managedns = Invoke-WebRequest -Uri "https://my.freenom.com$($_.href)" @webArgs
-            $records = @{ }
-            $lastRecord = -1
-            $managedns.InputFields | Where-Object name -match 'records\[([0-9]+)\]' | ForEach-Object {
-              $records[$_.name] = $_.value
-              $idx = [int]$matches[1]
-              if ($idx -gt $lastRecord) {
-                $lastRecord = $idx
+      $form = @{
+        username = $Email
+        password = $Passwd
+        token    = $script:token
+      }
+      Write-Verbose 'Authenticating...'
+      $auth = Invoke-WebRequest -Uri 'https://my.freenom.com/dologin.php' -Method Post -Form $form @webArgs
+      if ($auth.Content.Contains('Login Details Incorrect') -or
+          ($auth.Headers['Location'] -and $auth.Headers['Location'].Contains('clientarea.php?incorrect=true'))) {
+        throw 'noauth'
+      }
+      try {
+        Write-Verbose 'Retrieving domains...'
+        $script:foundDomain = $false
+        $allDomains = Invoke-WebRequest -Uri "https://my.freenom.com/clientarea.php?action=domains&itemlimit=all" @webArgs
+        $allDomains.Links | Where-Object href -match 'action=domaindetails' | ForEach-Object {
+          Write-Verbose "Retrieving domain data $($_.href)..."
+          $aDomain = Invoke-WebRequest -Uri "https://my.freenom.com/$($_.href)" @webArgs
+          $aDomain.Links | Where-Object href -match '\/clientarea.php\?managedns=([a-z\-\.]+)\&domainid=([0-9]+)' | ForEach-Object {
+            $currentDomain = $matches[1]
+            $domainId = $matches[2]
+            Write-Verbose "Domain: $currentDomain Id: $domainId"
+            if (($Domain -eq 'all') -or ($Domain -eq $currentDomain)) {
+              $script:foundDomain = $true
+              Write-Verbose "Checking domain $currentDomain..."
+              $managedns = Invoke-WebRequest -Uri "https://my.freenom.com$($_.href)" @webArgs
+              $records = @{ }
+              $lastRecord = -1
+              $managedns.InputFields | Where-Object name -match 'records\[([0-9]+)\]' | ForEach-Object {
+                $records[$_.name] = $_.value
+                $idx = [int]$matches[1]
+                if ($idx -gt $lastRecord) {
+                  $lastRecord = $idx
+                }
               }
-            }
-            Write-Debug "Total number of records: $($lastRecord+1)"
-            if ($Update) {
-              if ($Ip -eq 'auto') {
-                # Retrieve IP from on of the services
-                Write-Verbose "Retrieving my IP address from http://checkip.amazonaws.com"
-                $myIp = Invoke-WebRequest -Uri 'http://checkip.amazonaws.com' -UserAgent $UserAgent
-                $Ip = [System.Text.Encoding]::ASCII.GetString($myIp.Content).Trim()
-                Write-Verbose "Retrieved address $Ip"
-              }
-              $foundRecord = $false
-              $manageDnsUrl = "https://my.freenom.com/clientarea.php?managedns=$currentDomain&domainid=$domainId"
-              for ($i = 0; $i -lt $lastRecord; $i++) {
-                # If record is A record for selected subdomain, update it
-                if (($records["records[$i][name]"] -eq $Subdomain) -and
-                    ($records["records[$i][type]"] -eq 'A')) {
-                  $foundRecord = $true
-                  Write-Debug "Found record at $i: $($records["records[$i][name]"]) $($records["records[$i][type]"]) $($records["records[$i][ttl]"]) $($records["records[$i][value]"])"
-                  if ($records["records[$i][value]"] -ne $Ip) {
-                    Write-Verbose "Updating record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : ''))"
-                    $form = @{
-                      dnsaction            = 'modify'
-                      "records[$i][name]"  = $Subdomain
-                      "records[$i][type]"  = 'A'
-                      "records[$i][ttl]"   = '600'
-                      "records[$i][value]" = $Ip
+              Write-Debug "Total number of records: $($lastRecord+1)"
+              if ($Update) {
+                if ($Ip -eq 'auto') {
+                  # Retrieve IP from on of the services
+                  Write-Verbose 'Retrieving my IP address from http://checkip.amazonaws.com'
+                  $myIp = Invoke-WebRequest -Uri 'http://checkip.amazonaws.com' -UserAgent $UserAgent
+                  $Ip = [System.Text.Encoding]::ASCII.GetString($myIp.Content).Trim()
+                  Write-Verbose "Retrieved address $Ip"
+                }
+                $foundRecord = $false
+                $manageDnsUrl = "https://my.freenom.com/clientarea.php?managedns=$currentDomain&domainid=$domainId"
+                for ($i = 0; $i -lt $lastRecord; $i++) {
+                  # If record is A record for selected subdomain, update it
+                  if (($records["records[$i][name]"] -eq $Subdomain) -and
+                      ($records["records[$i][type]"] -eq 'A')) {
+                    $foundRecord = $true
+                    Write-Debug "Found record at [$i]: $($records["records[$i][name]"]) $($records["records[$i][type]"]) $($records["records[$i][ttl]"]) $($records["records[$i][value]"])"
+                    if ($records["records[$i][value]"] -ne $Ip) {
+                      Write-Verbose "Updating record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : ''))"
+                      $form = @{
+                        dnsaction            = 'modify'
+                        "records[$i][name]"  = $Subdomain
+                        "records[$i][type]"  = 'A'
+                        "records[$i][ttl]"   = '600'
+                        "records[$i][value]" = $Ip
+                      }
+                      $_ = Invoke-WebRequest -Uri $manageDnsUrl -Method Post -Form $form @webArgs
+                      Write-Verbose "Updated record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
                     }
-                    $_ = Invoke-WebRequest -Uri $manageDnsUrl -Method Post -Form $form @webArgs
-                    Write-Verbose "Updated record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
+                    else {
+                      Write-Verbose "IP address not changed for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
+                    }
+                    break;
                   }
-                  else {
-                    Write-Verbose "IP address not changed for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
+                }
+                # If record was not found, adding new one
+                if (!$foundRecord) {
+                  Write-Verbose "Adding new record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
+                  $form = @{
+                    dnsaction             = 'add'
+                    "addrecord[0][name]"  = $Subdomain
+                    "addrecord[0][type]"  = 'A'
+                    "addrecord[0][ttl]"   = '600'
+                    "addrecord[0][value]" = $Ip
                   }
-                  break;
+                  $_ = Invoke-WebRequest -Uri $manageDnsUrl -Method Post -Form $form @webArgs
+                  Write-Verbose "Added new record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
                 }
-              }
-              # If record was not found, adding new one
-              if (!$foundRecord) {
-                Write-Verbose "Adding new record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
-                $form = @{
-                  dnsaction             = 'add'
-                  "addrecord[0][name]"  = $Subdomain
-                  "addrecord[0][type]"  = 'A'
-                  "addrecord[0][ttl]"   = '600'
-                  "addrecord[0][value]" = $Ip
-                }
-                $_ = Invoke-WebRequest -Uri $manageDnsUrl -Method Post -Form $form @webArgs
-                Write-Verbose "Added new record for $currentDomain $($Subdomain ? "subdoman $Subdomain" : '')"
               }
             }
           }
         }
-      }
-      if (!$script:foundDomain) {
-        throw 'nohost'
-      }
-      if ($Renew) {
-        # Renewing freenom domains
-        Write-Verbose "Renewing domains..."
-        $allRenewals = Invoke-WebRequest -Uri 'https://my.freenom.com/domains.php?a=renewals&itemlimit=all' @webArgs
-        $allRenewals.Links | Where-Object href -match 'a=renewdomain' | ForEach-Object {
-          try {
-            Write-Verbose "Check domain renewal at $($_.href)..."
-            $renewDomain = Invoke-WebRequest -Uri "https://my.freenom.com/$($_.href)" @webArgs
-            if ($renewDomain.Content -notmatch 'Minimum Advance Renewal is 14 Days for Free Domains') {
-              if (($Domain -eq 'all') -or $renewDomain.Content.Contains("<td>$Domain</td>")) {
-                $form = @{}
+        if (!$script:foundDomain) {
+          throw 'nohost'
+        }
+        if ($Renew) {
+          # Renewing freenom domains
+          Write-Verbose 'Renewing domains...'
+          $allRenewals = Invoke-WebRequest -Uri 'https://my.freenom.com/domains.php?a=renewals&itemlimit=all' @webArgs
+          $allRenewals.Links | Where-Object href -match 'a=renewdomain' | ForEach-Object {
+            try {
+              Write-Verbose "Check domain renewal at $($_.href)..."
+              $renewDomain = Invoke-WebRequest -Uri "https://my.freenom.com/$($_.href)" @webArgs
+              if ($renewDomain.Content -notmatch 'Minimum Advance Renewal is 14 Days for Free Domains') {
+                if (($Domain -eq 'all') -or $renewDomain.Content.Contains("<td>$Domain</td>")) {
+                  $form = @{}
 
-                $renewDomain.InputFields | ForEach-Object {
-                  $form[$_.name] = $_.value
+                  $renewDomain.InputFields | ForEach-Object {
+                    $form[$_.name] = $_.value
+                  }
+                  $renewalPeriod = 12
+                  # $renewalPeriod = .*option value="\(.*\)\".*FREE.*
+                  $form["renewalperiod[$($form['renewalid'])]"] = $renewalPeriod
+                  Write-Verbose "Renewing domain at $($_.href)..."
+                  $_ = Invoke-WebRequest -Uri "https://my.freenom.com/domains.php?submitrenewals=true" -Method Post -Form $form @webArgs
+                  Write-Verbose "Renewed domain at $($_.href)"
                 }
-                $renewalPeriod = 12
-                # $renewalPeriod = .*option value="\(.*\)\".*FREE.*
-                $form["renewalperiod[$($form['renewalid'])]"] = $renewalPeriod
-                Write-Verbose "Renewing domain at $($_.href)..."
-                $_ = Invoke-WebRequest -Uri "https://my.freenom.com/domains.php?submitrenewals=true" -Method Post -Form $form @webArgs
-                Write-Verbose "Renewed domain at $($_.href)"
+                else {
+                  Write-Verbose "Domain at $($_.href) is ignored."
+                }
               }
               else {
-                Write-Verbose "Domain at $($_.href) is ignored."
+                Write-Verbose "Domain at $($_.href) not open for renewal."        
               }
             }
-            else {
-              Write-Verbose "Domain at $($_.href) not open for renewal."        
+            catch {
+              Write-Verbose $_.Exception
+              throw 'notrenewed'
             }
           }
-          catch {
-            Write-Verbose $_.Exception
-            throw 'notrenewed'
-          }
         }
+        $script:status
       }
-      $script:status
+      catch {
+        $_.Exception.WasThrownFromThrowStatement || Write-Verbose $_.Exception
+        throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'badagent'
+      }
     }
     catch {
       $_.Exception.WasThrownFromThrowStatement || Write-Verbose $_.Exception
-      throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'badagent'
+      throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'noauth'
+    }
+    finally {
+      Write-Verbose 'Logout'
+      $_ = Invoke-WebRequest -Uri 'https://my.freenom.com/logout.php' @webArgs
     }
   }
   catch {
-    $_.Exception.WasThrownFromThrowStatement || Write-Verbose $_.Exception
-    throw $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : 'noauth'
-  }
-  finally {
-    Write-Verbose "Logout"
-    $_ = Invoke-WebRequest -Uri 'https://my.freenom.com/logout.php' @webArgs
+    $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : '911'
   }
 }
-catch {
-  $_.Exception.WasThrownFromThrowStatement ? $_.Exception.Message : '911'
+finally {
+  if ($Logfile) {
+    $_ = Stop-Transcript
+  }
 }
 <#
 .SYNOPSIS
@@ -238,6 +279,8 @@ catch {
     If this switch is provided, domains will be renewed if possible. Can be used in combination with -Update.
 .PARAMETER Update
     If this switch is provided, the domain records will be updated. Can be used in combination with -Renew.
+.PARAMETER Logfile
+    If specified, output of the script execution is traced into provided file.
 .PARAMETER Help
     Displays full help.
 .INPUTS

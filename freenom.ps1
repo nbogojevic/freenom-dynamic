@@ -79,10 +79,11 @@ try {
   $script:status = 'good'
 
   try {
+    $Domain = $Domain -replace 'x-x', '*'
     Write-Debug 'Options'
     Write-Debug "E-mail    $Email"
     Write-Debug "Domain    $Domain"
-    Write-Debug "Domain    $Ip"
+    Write-Debug "IP        $Ip"
     Write-Debug "Subdomain $Subomain"
     Write-Debug "Update    $Update"
     Write-Debug "Renew     $Renew"
@@ -129,7 +130,7 @@ try {
             $currentDomain = $matches[1]
             $domainId = $matches[2]
             Write-Verbose "Domain: $currentDomain Id: $domainId"
-            if (($Domain -eq 'all') -or ($Domain -eq $currentDomain)) {
+            if (($Domain -eq 'all') -or ($currentDomain -like $Domain)) {
               $script:foundDomain = $true
               Write-Verbose "Checking domain $currentDomain..."
               $managedns = Invoke-WebRequest -Uri "https://my.freenom.com$($_.href)" @webArgs
@@ -270,7 +271,7 @@ finally {
 .PARAMETER Passwd
     Specifies password used to log in to Freenom.com
 .PARAMETER Domain
-    Specifies the domain to update. If set to 'all', all domains will be updated.
+    Specifies the domain to update. If set to 'all', all domains will be updated. Wildcards are supported be used (e.g. *.cf). Combination of characters x-x will be treated as wildcard.
 .PARAMETER Ip
     Specifies IP address to use. If set to 'auto', IP address will be retrieved from one of the web IP retrieval services.
 .PARAMETER Subdomain

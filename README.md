@@ -1,3 +1,5 @@
+# This repository has been archived as I no longer use this method. See https://github.com/nbogojevic/synology-utilities for an alternative approach.
+
 # Dynamic DNS for Freenom.com
 
 This repository contains script to update [Freenom](https://www.freenom.com) records.
